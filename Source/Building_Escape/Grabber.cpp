@@ -23,7 +23,7 @@ void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("Grabbahhhh"));
+	// UE_LOG(LogTemp, Warning, TEXT("Grabbahhhh"));
 	
 }
 
@@ -54,7 +54,22 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 		5
 	);
 
+	FHitResult Hit;
+	FCollisionQueryParams TraceParams(FName(TEXT("")), false, GetOwner());
+	GetWorld()->LineTraceSingleByObjectType(
+		OUT Hit,
+		PlayerViewPointLocation,
+		LineTraceEnd,
+		FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
+		TraceParams
+	);
 
+	AActor* ActorHit = Hit.GetActor();
+
+	if (ActorHit)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Line trace has hit %s"), *(ActorHit->GetName()));
+	}
 	// UE_LOG(LogTemp, Warning, TEXT("Location is %s"), *PlayerViewPointLocation.ToString());
 	// UE_LOG(LogTemp, Warning, TEXT("Rotation is %s"), *PlayerViewPointRotation.ToString());
 }
