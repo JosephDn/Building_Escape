@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Grabber.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
-#include "Grabber.h"
 
 #define OUT
 
@@ -23,10 +23,34 @@ void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// UE_LOG(LogTemp, Warning, TEXT("Grabbahhhh"));
+	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
+	if (PhysicsHandle)
+	{
+		// Do Nothing
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No physics handle component found on %s"), *GetOwner()->GetName());
+	}
+
+	InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
+	if (InputComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Input component found for %s"), *GetOwner()->GetName());
+		InputComponent->BindAction("Grab", IE_Pressed, this /*points to class executing*/, &UGrabber::Grab);
+	}
 	
+	
+	/*else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Input component not found for %s"), *GetOwner()->GetName());
+	}*/
 }
 
+void UGrabber::Grab()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Grabber pressed successfully"));
+}
 
 // Called every frame
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
