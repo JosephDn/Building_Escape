@@ -7,13 +7,14 @@
 
 #define OUT
 
-// Sets default values for this component's properties
 UGrabber::UGrabber()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 }
+
+
 
 void UGrabber::BeginPlay()
 {
@@ -23,6 +24,8 @@ void UGrabber::BeginPlay()
 	SetupInputComponent();
 }
 
+
+// Nullptr error
 void UGrabber::FindPhysicsHandle()
 {	
 	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
@@ -36,6 +39,8 @@ void UGrabber::FindPhysicsHandle()
 	}
 }
 
+
+// Nullptr error
 void UGrabber::SetupInputComponent()
 {
 	InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
@@ -47,21 +52,53 @@ void UGrabber::SetupInputComponent()
 	}
 }
 
+
+
 void UGrabber::Grab()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Grabber pressed successfully"));
-	GetFirstPhysicsBodyInReach();
+
+	FVector LineTraceEnd = GetLineTraceEnd();
+	
+	FHitResult HitResult = GetFirstPhysicsBodyInReach();
+	UPrimitiveComponent* ComponentToGrab = HitResult.GetComponent();
+
+	if (HitResult.GetActor())
+	{
+		PhysicsHandle->GrabComponentAtLocation
+		(
+			ComponentToGrab,
+			NAME_None,
+			LineTraceEnd
+		);
+	}
 }
+
+
 
 void UGrabber::Release()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Grabber released successfully"));
+	PhysicsHandle->ReleaseComponent();
 }
+
+
 
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	FVector LineTraceEnd = GetLineTraceEnd();
+
+	// If physics handle is attached
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		// Move the object we are holding
+		PhysicsHandle->SetTargetLocation(LineTraceEnd);
+	}
 }
+
+
 
 FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
 {
@@ -93,6 +130,23 @@ FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
 	}
 
 	return Hit;
+}
+
+
+
+FVector UGrabber::GetLineTraceEnd() const
+{
+	FVector PlayerViewPointLocation;
+	FRotator PlayerViewPointRotation;
+
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
+		OUT PlayerViewPointLocation,
+		OUT PlayerViewPointRotation
+	);
+
+	FVector LineTraceEnd = PlayerViewPointLocation + PlayerViewPointRotation.Vector() * Reach;
+
+	return LineTraceEnd;
 }
 
 // Draws debug line
