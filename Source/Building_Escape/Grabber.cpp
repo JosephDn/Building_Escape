@@ -51,7 +51,7 @@ void UGrabber::SetupInputComponent()
 
 void UGrabber::Grab()
 {	
-	FHitResult HitResult = GetFirstPhysicsBodyInReach();
+	FHitResult const HitResult = GetFirstPhysicsBodyInReach();
 	UPrimitiveComponent* ComponentToGrab = HitResult.GetComponent();
 
 	if (HitResult.GetActor())

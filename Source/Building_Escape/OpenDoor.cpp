@@ -2,8 +2,11 @@
 
 #include "OpenDoor.h"
 #include "Engine/World.h"
-#include "GameFramework/PlayerController.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/PrimitiveComponent.h"
+
+#define OUT
 
 // Sets default values for this component's properties
 UOpenDoor::UOpenDoor()
@@ -19,13 +22,13 @@ UOpenDoor::UOpenDoor()
 // Called when the game starts
 void UOpenDoor::BeginPlay()
 {
-	Super::BeginPlay();	
+	Super::BeginPlay();
 
 	InitialYaw = GetOwner()->GetActorRotation().Yaw;
 	CurrentYaw = InitialYaw;
 	OpenAngle += InitialYaw;
 
-	if (!PressurePlate)		// Null pointer check
+	if (!PressurePlate) // Null pointer check
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s has open door component but no pressureplate set"), *GetOwner()->GetName());
 	}
@@ -41,7 +44,7 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 
 	// Use "if (PressurePlate && PressurePlate->IsOverlappingActor(ActorThatOpens))" to avoid UE4 crash from null pointer
 
-	if (PressurePlate->IsOverlappingActor(ActorThatOpens))
+	if (TotalMassOfActors() > OpenDoorMass)
 	{
 		OpenDoor(DeltaTime);
 		DoorLastOpened = GetWorld()->GetTimeSeconds();
@@ -50,9 +53,6 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 	{
 		CloseDoor(DeltaTime);
 	}
-
-	// UE_LOG(LogTemp, Warning, TEXT("%s"), *GetOwner()->GetActorRotation().ToString());
-	// UE_LOG(LogTemp, Warning, TEXT("Yaw is %f"), GetOwner()->GetActorRotation().Yaw);
 }
 
 void UOpenDoor::OpenDoor(float DeltaTime)
@@ -68,5 +68,21 @@ void UOpenDoor::CloseDoor(float DeltaTime)
 	CurrentYaw = FMath::FInterpTo(CurrentYaw, InitialYaw, DeltaTime, DoorCloseSpeed);
 	FRotator DoorRotation = GetOwner()->GetActorRotation();
 	DoorRotation.Yaw = CurrentYaw;
-	GetOwner()->SetActorRotation(DoorRotation);
+	GetOwner()->SetActorRotation(DoorRotation)
+}
+
+float UOpenDoor::TotalMassOfActors() const
+{
+	float TotalMass = 0.f;
+	// Find all overlapping actors
+	TArray<AActor*> OverlappingActors;
+	PressurePlate->GetOverlappingActors(OUT OverlappingActors);
+	// Add up their masses
+	for (AActor* Actor : OverlappingActors)
+	{
+		TotalMass += Actor->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+	}
+	UE_LOG(LogTemp, Warning, TEXT("The total mass is %f"), TotalMass);
+	UE_LOG(LogTemp, Warning, TEXT("The total mass is %f"), TotalMass);
+	return TotalMass;
 }
