@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Grabber.h"
+
+#include "AssetTypeCategories.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -15,7 +17,6 @@ UGrabber::UGrabber()
 }
 
 
-
 void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
@@ -27,9 +28,9 @@ void UGrabber::BeginPlay()
 
 // Nullptr error
 void UGrabber::FindPhysicsHandle()
-{	
+{
 	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
-	if (PhysicsHandle == nullptr)
+	if (!PhysicsHandle)
 	{
 		UE_LOG(LogTemp, Error, TEXT("No physics handle component found on %s"), *GetOwner()->GetName());
 	}
@@ -43,19 +44,20 @@ void UGrabber::SetupInputComponent()
 	if (InputComponent)
 	{
 		InputComponent->BindAction("Grab", IE_Pressed, this /*points to class executing*/, &UGrabber::Grab);
-		InputComponent->BindAction("Grab", IE_Released, this /*points to class executing*/, &UGrabber::Release);		
+		InputComponent->BindAction("Grab", IE_Released, this /*points to class executing*/, &UGrabber::Release);
 	}
 }
 
 
-
 void UGrabber::Grab()
-{	
+{
 	FHitResult const HitResult = GetFirstPhysicsBodyInReach();
 	UPrimitiveComponent* ComponentToGrab = HitResult.GetComponent();
+	AActor* ActorHit = HitResult.GetActor();
 
-	if (HitResult.GetActor())
+	if (ActorHit)
 	{
+		if (!PhysicsHandle) { return; }
 		PhysicsHandle->GrabComponentAtLocation
 		(
 			ComponentToGrab,
@@ -66,12 +68,11 @@ void UGrabber::Grab()
 }
 
 
-
 void UGrabber::Release()
 {
+	if (!PhysicsHandle) { return; }
 	PhysicsHandle->ReleaseComponent();
 }
-
 
 
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -79,13 +80,13 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// If physics handle is attached
+	if (!PhysicsHandle) { return; }
 	if (PhysicsHandle->GrabbedComponent)
 	{
 		// Move the object we are holding
 		PhysicsHandle->SetTargetLocation(GetPlayersReach());
 	}
 }
-
 
 
 FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
@@ -101,7 +102,6 @@ FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
 	);
 	return Hit;
 }
-
 
 
 FVector UGrabber::GetPlayersReach() const
